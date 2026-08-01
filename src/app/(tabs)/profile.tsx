@@ -5,6 +5,7 @@ import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ActivityCalendar } from "@/components/activity-calendar";
+import { ActivityFeed } from "@/components/activity-feed";
 import {
   DurationBarChart,
   formatDuration,
@@ -16,6 +17,7 @@ import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { getWeekStart, toLocalISODate } from "@/lib/date";
+import { computeWeekStreak } from "@/lib/streak";
 import {
   listActiveHobbies,
   listAllProgressLogsForUser,
@@ -239,15 +241,30 @@ export default function ProfileScreen() {
               const hobbyColors = buildHobbyColors(state.logs);
               const hobbyNames = buildHobbyNames(state.logs);
               const activitySummaries = summarizeActivities(state.logs);
+              const weekStreak = computeWeekStreak(new Set(state.logs.map((l) => l.log_date)));
               return (
                 <ThemedView style={styles.sections}>
+                  <ThemedView type="backgroundElement" style={styles.card}>
+                    <ThemedText type="subtitle" style={styles.cardTitle}>
+                      Streak
+                    </ThemedText>
+                    <ThemedText type="title">
+                      {weekStreak} {weekStreak === 1 ? "week" : "weeks"}
+                    </ThemedText>
+                    <ThemedText themeColor="textSecondary" type="small">
+                      {weekStreak > 0
+                        ? "Log at least one activity a week to keep it going."
+                        : "Log an activity this week to start a new streak."}
+                    </ThemedText>
+                  </ThemedView>
+
                   <ThemedView type="backgroundElement" style={styles.card}>
                     <ThemedText type="subtitle" style={styles.cardTitle}>
                       Current Hobbies
                     </ThemedText>
                     {state.activeHobbies.length === 0 ? (
                       <ThemedText themeColor="textSecondary" type="small">
-                        Nothing active yet — accept a suggestion from Generate.
+                        Nothing active yet — tap the + on My Hobbies to generate a suggestion.
                       </ThemedText>
                     ) : (
                       <ThemedView style={styles.list}>
@@ -296,6 +313,13 @@ export default function ProfileScreen() {
                         ))}
                       </ThemedView>
                     )}
+                  </ThemedView>
+
+                  <ThemedView type="backgroundElement" style={styles.card}>
+                    <ThemedText type="subtitle" style={styles.cardTitle}>
+                      All Activities
+                    </ThemedText>
+                    <ActivityFeed logs={state.logs} />
                   </ThemedView>
 
                   <ThemedView type="backgroundElement" style={styles.card}>

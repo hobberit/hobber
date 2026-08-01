@@ -28,13 +28,22 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={isSignedIn && isOnboarded}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="generate" options={{ headerShown: false }} />
         <Stack.Screen
           name="hobby/[id]"
           options={{ headerShown: true, title: "Hobby Guide" }}
         />
         <Stack.Screen
-          name="tracker/[userHobbyId]"
+          name="tracker/[userHobbyId]/index"
           options={{ headerShown: true, title: "Progress" }}
+        />
+        <Stack.Screen
+          name="tracker/[userHobbyId]/log-activity"
+          options={{ headerShown: true, title: "Log An Activity" }}
+        />
+        <Stack.Screen
+          name="retake-quiz"
+          options={{ headerShown: true, title: "Retake Quiz" }}
         />
       </Stack.Protected>
     </Stack>

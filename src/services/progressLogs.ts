@@ -13,10 +13,12 @@ export async function listProgressLogs(userHobbyId: string): Promise<ProgressLog
 }
 
 export interface NewProgressLog {
+  title: string;
   log_date: string;
   duration_minutes: number;
   notes?: string;
   mood_rating?: number;
+  photo_url?: string;
 }
 
 export async function addProgressLog(
@@ -34,10 +36,12 @@ export async function addProgressLog(
 }
 
 export interface ProgressLogUpdate {
+  title?: string;
   log_date?: string;
   duration_minutes?: number;
   notes?: string | null;
   mood_rating?: number | null;
+  photo_url?: string | null;
 }
 
 export async function updateProgressLog(

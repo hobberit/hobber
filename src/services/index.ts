@@ -14,3 +14,4 @@ export * from "./userMilestones";
 export * from "./tracker";
 export * from "./profileStats";
 export * from "./avatar";
+export * from "./activityPhotos";

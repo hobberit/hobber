@@ -28,13 +28,8 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="generate">
-        <NativeTabs.Trigger.Label>Generate</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="sparkles" />
-      </NativeTabs.Trigger>
-
       <NativeTabs.Trigger name="tracker">
-        <NativeTabs.Trigger.Label>Tracker</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>My Hobbies</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="chart.line.uptrend.xyaxis" />
       </NativeTabs.Trigger>
 
