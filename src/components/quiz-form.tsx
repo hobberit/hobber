@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Fonts } from "@/constants/theme";
 import { quizSteps } from "@/features/onboarding/quizConfig";
 import type { OnboardingAnswers } from "@/services/onboarding";
 
@@ -211,6 +212,7 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
   question: {
+    fontFamily: Fonts.sans,
     fontSize: 26,
     fontWeight: "700",
     lineHeight: 32,

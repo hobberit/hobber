@@ -19,7 +19,7 @@
 insert into hobbies (id, name, category, description, indoor_outdoor, solo_social, cost_tier, cost_min, cost_max, time_beginner_hrs_week, time_intermediate_hrs_week, tags) values
 ('10000000-0000-0000-0000-000000000001', 'Photography', 'creative', 'Learn to see and capture the world through a camera, starting with the phone already in your pocket.', 'both', 'solo', 'high', 0, 800, 2, 5, '{photography,visual-art,creative,gear-optional}'),
 ('10000000-0000-0000-0000-000000000002', 'Painting', 'creative', 'Explore acrylics or watercolors to build a relaxing creative practice.', 'indoor', 'solo', 'low', 20, 150, 2, 4, '{painting,visual-art,creative,relaxing}'),
-('10000000-0000-0000-0000-000000000003', 'Playing Guitar', 'creative', 'Pick up an instrument and start playing your first songs within weeks.', 'indoor', 'solo', 'medium', 100, 500, 3, 6, '{music,instrument,creative}'),
+('10000000-0000-0000-0000-000000000003', 'Guitar', 'creative', 'Pick up an instrument and start playing your first songs within weeks.', 'indoor', 'solo', 'medium', 100, 500, 3, 6, '{music,instrument,creative}'),
 ('10000000-0000-0000-0000-000000000004', 'Creative Writing', 'creative', 'Develop a regular writing practice, from short stories to journaling.', 'indoor', 'solo', 'free', 0, 20, 2, 5, '{writing,creative,low-cost}'),
 ('10000000-0000-0000-0000-000000000005', 'Pottery', 'creative', 'Shape clay by hand or on a wheel at a local studio.', 'indoor', 'both', 'high', 30, 600, 2, 4, '{pottery,ceramics,craft,studio-access}'),
 ('10000000-0000-0000-0000-000000000006', 'Drawing & Sketching', 'creative', 'Build observational drawing skills with nothing but paper and pencil.', 'indoor', 'solo', 'low', 0, 50, 2, 4, '{drawing,visual-art,low-cost,portable}'),
@@ -39,7 +39,7 @@ insert into hobbies (id, name, category, description, indoor_outdoor, solo_socia
 -- ─── Hobbies: Technical ─────────────────────────────────────────────────
 
 insert into hobbies (id, name, category, description, indoor_outdoor, solo_social, cost_tier, cost_min, cost_max, time_beginner_hrs_week, time_intermediate_hrs_week, tags) values
-('30000000-0000-0000-0000-000000000001', 'Learning to Code', 'technical', 'Build real software, starting with a laptop you probably already own.', 'indoor', 'solo', 'free', 0, 0, 4, 8, '{coding,programming,free,laptop-required}'),
+('30000000-0000-0000-0000-000000000001', 'Coding', 'technical', 'Build real software, starting with a laptop you probably already own.', 'indoor', 'solo', 'free', 0, 0, 4, 8, '{coding,programming,free,laptop-required}'),
 ('30000000-0000-0000-0000-000000000002', 'Robotics', 'technical', 'Combine electronics and code to build machines that move and sense the world.', 'indoor', 'both', 'medium', 50, 400, 3, 6, '{robotics,electronics,stem,kit-based}'),
 ('30000000-0000-0000-0000-000000000003', '3D Printing', 'technical', 'Design and print physical objects from digital models.', 'indoor', 'solo', 'high', 200, 800, 2, 5, '{3d-printing,maker,hardware,upfront-cost}'),
 ('30000000-0000-0000-0000-000000000004', 'Electronics', 'technical', 'Learn circuits by building small projects with a beginner component kit.', 'indoor', 'solo', 'medium', 30, 200, 2, 5, '{electronics,maker,tinkering,kit-based}'),
@@ -128,7 +128,7 @@ insert into milestones (hobby_id, title, description, typical_timeframe, order_i
 ('20000000-0000-0000-0000-000000000001', 'Climbing-specific strength', 'Has visible finger/core strength gains and climbs 2-3x/week consistently.', 'Month 6', 3),
 ('20000000-0000-0000-0000-000000000001', 'Ready for outdoor routes', 'Climbs 5.10-5.11 (V4-V5) and is comfortable trying outdoor routes.', 'Month 12', 4);
 
--- ─── Learning to Code (flagship: technical) ─────────────────────────────
+-- ─── Coding (flagship: technical) ─────────────────────────────
 
 insert into equipment_items (hobby_id, name, is_essential, cost_min, cost_max, product_link, alt_note) values
 ('30000000-0000-0000-0000-000000000001', 'A laptop', true, 0, 0, null, 'Any laptop you already own works to start'),

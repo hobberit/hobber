@@ -2,14 +2,20 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet } from "react-native";
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedText } from "@/components/themed-text";
-import { ThemedTextInput } from "@/components/themed-text-input";
-import { ThemedView } from "@/components/themed-view";
-import { Spacing } from "@/constants/theme";
+import { BottomTabInset, Fonts } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { useTheme } from "@/hooks/use-theme";
 import { toLocalISODate } from "@/lib/date";
 import { addProgressLog, listActiveHobbies, uploadActivityPhoto, type ActiveHobby } from "@/services";
 
@@ -33,7 +39,6 @@ export default function LogActivityScreen() {
   }>();
   const router = useRouter();
   const { session } = useAuth();
-  const theme = useTheme();
   const [title, setTitle] = useState("");
   const [logDate, setLogDate] = useState(() => toLocalISODate(new Date()));
   const [duration, setDuration] = useState("");
@@ -130,93 +135,127 @@ export default function LogActivityScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ThemedText type="title">Log An Activity</ThemedText>
-
-      <ThemedView style={styles.form}>
-        <ThemedText themeColor="textSecondary" type="small" style={styles.hobbyLabel}>
-          Hobby
-        </ThemedText>
-        <Pressable onPress={() => setIsHobbyPickerOpen(true)}>
-          <ThemedView type="backgroundElement" style={[styles.hobbyField, { borderColor: theme.textSecondary }]}>
-            <ThemedText style={styles.hobbyFieldLabel}>
-              {selectedHobbyName || "Select a hobby"}
-            </ThemedText>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: BottomTabInset + 24 }]}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8}>
             <SymbolView
-              name={{ ios: "chevron.up.chevron.down", android: "unfold_more", web: "unfold_more" }}
-              size={16}
-              tintColor={theme.textSecondary}
+              name={{ ios: "chevron.left", android: "chevron_left", web: "chevron_left" }}
+              size={20}
+              tintColor="#000000"
             />
-          </ThemedView>
+          </Pressable>
+          <Text style={styles.title}>Log An Activity</Text>
+        </View>
+
+        <Text style={styles.fieldLabel}>HOBBY</Text>
+        <Pressable onPress={() => setIsHobbyPickerOpen(true)} style={styles.hobbyField}>
+          <Text style={styles.hobbyFieldLabel}>{selectedHobbyName || "Select a hobby"}</Text>
+          <SymbolView
+            name={{ ios: "chevron.up.chevron.down", android: "unfold_more", web: "unfold_more" }}
+            size={16}
+            tintColor="#8A8D93"
+          />
         </Pressable>
-        <ThemedTextInput
+
+        <TextInput
           placeholder="Title (e.g. Morning practice)"
+          placeholderTextColor="#A6A9AE"
           value={title}
           onChangeText={setTitle}
-          style={styles.notesInput}
+          style={[styles.input, styles.spacedField]}
         />
-        <ThemedTextInput
-          placeholder="Date (YYYY-MM-DD)"
-          value={logDate}
-          onChangeText={setLogDate}
-          style={styles.notesInput}
-        />
-        <ThemedTextInput
-          placeholder="Minutes spent"
-          keyboardType="numeric"
-          value={duration}
-          onChangeText={setDuration}
-          style={styles.notesInput}
-        />
-        <ThemedTextInput
-          placeholder="Notes (optional)"
-          value={notes}
-          onChangeText={setNotes}
-          style={styles.notesInput}
-        />
-        <ThemedView style={styles.moodRow}>
-          {MOOD_OPTIONS.map((m) => (
-            <Pressable key={m} onPress={() => setMood(mood === m ? null : m)}>
-              <ThemedView
-                type={mood === m ? "backgroundSelected" : "backgroundElement"}
-                style={styles.moodPill}>
-                <ThemedText type="small">{m}</ThemedText>
-              </ThemedView>
-            </Pressable>
-          ))}
-        </ThemedView>
+
+        <View style={[styles.row, styles.spacedField]}>
+          <View style={[styles.input, styles.rowField]}>
+            <SymbolView
+              name={{ ios: "calendar", android: "calendar_month", web: "calendar_month" }}
+              size={16}
+              tintColor="#8A8D93"
+            />
+            <TextInput
+              placeholder="Date"
+              placeholderTextColor="#A6A9AE"
+              value={logDate}
+              onChangeText={setLogDate}
+              style={styles.rowFieldInput}
+            />
+          </View>
+          <View style={[styles.input, styles.rowField]}>
+            <SymbolView
+              name={{ ios: "clock", android: "schedule", web: "schedule" }}
+              size={16}
+              tintColor="#8A8D93"
+            />
+            <TextInput
+              placeholder="Minutes spent"
+              placeholderTextColor="#A6A9AE"
+              keyboardType="numeric"
+              value={duration}
+              onChangeText={setDuration}
+              style={styles.rowFieldInput}
+            />
+          </View>
+        </View>
+
         {photoUri ? (
-          <ThemedView style={styles.photoPreviewRow}>
+          <View style={styles.spacedField}>
             <Image source={{ uri: photoUri }} style={styles.photoPreview} />
             <Pressable
               onPress={() => {
                 setPhotoUri(null);
                 setPhotoMimeType(null);
               }}>
-              <ThemedText type="small" style={styles.deleteLabel}>
-                Remove photo
-              </ThemedText>
+              <Text style={styles.removePhotoLabel}>Remove photo</Text>
             </Pressable>
-          </ThemedView>
+          </View>
         ) : (
-          <Pressable onPress={pickSessionPhoto} style={styles.addPhotoButton}>
+          <Pressable onPress={pickSessionPhoto} style={[styles.addPhotoRow, styles.spacedField]}>
             <SymbolView
               name={{ ios: "camera", android: "photo_camera", web: "photo_camera" }}
-              size={16}
-              tintColor={theme.textSecondary}
+              size={18}
+              tintColor="#000000"
             />
-            <ThemedText themeColor="textSecondary" type="small">
-              Add a photo (optional)
-            </ThemedText>
+            <Text style={styles.addPhotoLabel}>Add a photo (optional)</Text>
           </Pressable>
         )}
-        {formError && <ThemedText style={styles.error}>{formError}</ThemedText>}
-        <Pressable style={styles.primaryButton} disabled={isSubmitting} onPress={handleAddSession}>
-          <ThemedText style={styles.primaryButtonLabel}>
+
+        <TextInput
+          placeholder="Notes (optional)"
+          placeholderTextColor="#A6A9AE"
+          value={notes}
+          onChangeText={setNotes}
+          multiline
+          style={[styles.input, styles.notesInput, styles.spacedField]}
+        />
+
+        <Text style={[styles.fieldLabel, styles.spacedField]}>MOOD</Text>
+        <View style={[styles.row, styles.moodRow]}>
+          {MOOD_OPTIONS.map((m) => (
+            <Pressable
+              key={m}
+              onPress={() => setMood(mood === m ? null : m)}
+              style={[styles.moodPill, mood === m && styles.moodPillSelected]}>
+              <Text style={[styles.moodPillLabel, mood === m && styles.moodPillLabelSelected]}>
+                {m}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {formError && <Text style={styles.error}>{formError}</Text>}
+
+        <Pressable
+          style={styles.primaryButton}
+          disabled={isSubmitting}
+          onPress={handleAddSession}>
+          <Text style={styles.primaryButtonLabel}>
             {isSubmitting ? "Saving..." : "Log Activity"}
-          </ThemedText>
+          </Text>
         </Pressable>
-      </ThemedView>
+      </ScrollView>
 
       <Modal
         visible={isHobbyPickerOpen}
@@ -224,136 +263,216 @@ export default function LogActivityScreen() {
         animationType="fade"
         onRequestClose={() => setIsHobbyPickerOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setIsHobbyPickerOpen(false)}>
-          <ThemedView type="background" style={styles.modalCard}>
-            <ThemedText type="subtitle" style={styles.modalTitle}>
-              Log to which hobby?
-            </ThemedText>
-            <ThemedView style={styles.hobbyList}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Log to which hobby?</Text>
+            <View style={styles.hobbyList}>
               {activeHobbies.map((activeHobby) => (
                 <Pressable key={activeHobby.userHobby.id} onPress={() => selectHobby(activeHobby)}>
-                  <ThemedView
-                    type={
-                      activeHobby.userHobby.id === selectedUserHobbyId
-                        ? "backgroundSelected"
-                        : "backgroundElement"
-                    }
-                    style={styles.hobbyOption}>
-                    <ThemedText>{activeHobby.hobby.name}</ThemedText>
-                  </ThemedView>
+                  <View
+                    style={[
+                      styles.hobbyOption,
+                      activeHobby.userHobby.id === selectedUserHobbyId &&
+                        styles.hobbyOptionSelected,
+                    ]}>
+                    <Text style={styles.hobbyOptionLabel}>{activeHobby.hobby.name}</Text>
+                  </View>
                 </Pressable>
               ))}
-            </ThemedView>
+            </View>
             <Pressable onPress={() => setIsHobbyPickerOpen(false)} style={styles.modalCancel}>
-              <ThemedText themeColor="textSecondary" type="small">
-                Cancel
-              </ThemedText>
+              <Text style={styles.modalCancelLabel}>Cancel</Text>
             </Pressable>
-          </ThemedView>
+          </View>
         </Pressable>
       </Modal>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: Spacing.four,
-    gap: Spacing.two,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#ffffff",
   },
-  form: {
-    gap: 0,
-    marginTop: Spacing.two,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
-  error: {
-    color: "#e0463f",
-    marginTop: Spacing.two,
+  header: {
+    gap: 12,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
-  hobbyLabel: {
-    marginBottom: Spacing.one,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+  title: {
+    fontFamily: Fonts.sans,
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#000000",
+    letterSpacing: -0.26,
+    lineHeight: 32,
+  },
+  fieldLabel: {
+    marginTop: 20,
+    marginBottom: 6,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.7,
+    color: "#8A8D93",
   },
   hobbyField: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: "#F0F0F3",
     borderWidth: 1,
+    borderColor: "#E5E5E8",
   },
   hobbyFieldLabel: {
+    fontSize: 15,
     fontWeight: "600",
+    color: "#000000",
   },
-  notesInput: {
-    marginTop: Spacing.two,
+  input: {
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E5E5E8",
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#000000",
   },
-  moodRow: {
+  spacedField: {
+    marginTop: 10,
+  },
+  row: {
     flexDirection: "row",
-    gap: Spacing.one,
-    marginTop: Spacing.two,
+    gap: 10,
   },
-  moodPill: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.two,
-    borderRadius: 999,
-  },
-  addPhotoButton: {
+  rowField: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.one,
-    marginTop: Spacing.two,
+    gap: 8,
+    paddingVertical: 0,
   },
-  photoPreviewRow: {
-    gap: Spacing.one,
-    marginTop: Spacing.two,
+  rowFieldInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#000000",
+  },
+  addPhotoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  addPhotoLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000000",
   },
   photoPreview: {
     width: "100%",
     height: 160,
     borderRadius: 10,
   },
-  primaryButton: {
-    backgroundColor: "#3c87f7",
-    borderRadius: 8,
-    paddingVertical: Spacing.three,
+  removePhotoLabel: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#e0463f",
+  },
+  notesInput: {
+    height: 76,
+    textAlignVertical: "top",
+  },
+  moodRow: {
+    marginTop: 8,
+  },
+  moodPill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: Spacing.two,
+    justifyContent: "center",
+    backgroundColor: "#F0F0F3",
+  },
+  moodPillSelected: {
+    backgroundColor: "#E0E1E6",
+  },
+  moodPillLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#000000",
+  },
+  moodPillLabelSelected: {
+    fontWeight: "700",
+  },
+  error: {
+    marginTop: 16,
+    fontSize: 14,
+    color: "#e0463f",
+  },
+  primaryButton: {
+    marginTop: 32,
+    backgroundColor: "#000000",
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: "center",
   },
   primaryButtonLabel: {
     color: "#ffffff",
-    fontWeight: "600",
-  },
-  deleteLabel: {
-    color: "#e0463f",
-    marginTop: Spacing.two,
+    fontWeight: "700",
+    fontSize: 15,
   },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.four,
+    padding: 24,
   },
   modalCard: {
     width: "100%",
     maxWidth: 360,
     borderRadius: 16,
-    padding: Spacing.four,
+    padding: 24,
+    backgroundColor: "#ffffff",
   },
   modalTitle: {
-    marginBottom: Spacing.three,
+    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000000",
   },
   hobbyList: {
-    gap: Spacing.two,
+    gap: 8,
   },
   hobbyOption: {
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: "#F0F0F3",
+  },
+  hobbyOptionSelected: {
+    backgroundColor: "#E0E1E6",
+  },
+  hobbyOptionLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#000000",
   },
   modalCancel: {
     alignItems: "center",
-    marginTop: Spacing.three,
+    marginTop: 16,
+  },
+  modalCancelLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#666666",
   },
 });

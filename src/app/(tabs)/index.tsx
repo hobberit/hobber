@@ -3,15 +3,15 @@ import { useCallback, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ActivityFeed } from "@/components/activity-feed";
 import { HobbyCardImage } from "@/components/hobby-card-image";
+import { RecentActivityList } from "@/components/recent-activity-card";
 import { StreakTracker } from "@/components/streak-tracker";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { getMonthStart, toLocalISODate } from "@/lib/date";
-import { computeWeekActivity } from "@/lib/streak";
+import { computeWeekActivity, computeWeekStreak } from "@/lib/streak";
 import {
   acceptMonthlyChallenge,
   createMonthlyChallenge,
@@ -46,10 +46,11 @@ const MONTHLY_CHALLENGE_ENABLED = false;
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [state, setState] = useState<ScreenState>({ kind: "loading" });
   const [weekActivity, setWeekActivity] = useState<WeekActivityState | null>(null);
   const [recentLogs, setRecentLogs] = useState<EnrichedProgressLog[]>([]);
+  const [weekStreak, setWeekStreak] = useState(0);
   const [isActing, setIsActing] = useState(false);
 
   const load = useCallback(async () => {
@@ -61,6 +62,7 @@ export default function HomeScreen() {
       const logs = await listAllProgressLogsForUser(userId);
       const logDates = new Set(logs.map((l) => l.log_date));
       setWeekActivity(computeWeekActivity(logDates));
+      setWeekStreak(computeWeekStreak(logDates));
       setRecentLogs(logs);
     } catch {
       // Non-critical — the Monthly Challenge below is the primary content of this screen.
@@ -178,7 +180,16 @@ export default function HomeScreen() {
             <ThemedText type="subtitle" style={styles.cardTitle}>
               Recent Activity
             </ThemedText>
-            <ActivityFeed logs={recentLogs} limit={5} />
+            <RecentActivityList
+              logs={recentLogs}
+              streak={weekStreak}
+              limit={5}
+              poster={{
+                displayName: profile?.display_name ?? null,
+                avatarUrl: profile?.avatar_url ?? null,
+                email: session?.user.email ?? "",
+              }}
+            />
           </ThemedView>
 
           {MONTHLY_CHALLENGE_ENABLED && (

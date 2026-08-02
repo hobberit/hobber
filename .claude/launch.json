@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "hobber-web",
-      "runtimeExecutable": "C:\\Windows\\System32\\cmd.exe",
-      "runtimeArgs": ["/c", "C:\\Program Files\\nodejs\\npx.cmd", "expo", "start", "--web"],
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\node.exe",
+      "runtimeArgs": ["node_modules/expo/bin/cli", "start", "--web"],
       "port": 8081
     }
   ]

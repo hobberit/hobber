@@ -1,4 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
+import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import { useCallback, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
@@ -10,16 +11,23 @@ import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useTheme } from "@/hooks/use-theme";
-import { listActiveHobbies, listFinishedHobbies, type ActiveHobby } from "@/services";
+import { listActiveHobbies, listFinishedHobbies, withProgressSummary, type ActiveHobbyProgress } from "@/services";
 
 type ScreenState =
   | { kind: "loading" }
   | {
       kind: "loaded";
-      activeHobbies: ActiveHobby[];
-      finishedHobbies: ActiveHobby[];
+      activeHobbies: ActiveHobbyProgress[];
+      finishedHobbies: ActiveHobbyProgress[];
     }
   | { kind: "error"; message: string };
+
+function progressCaption(h: ActiveHobbyProgress): string {
+  const sessions = `${h.sessionsLogged} session${h.sessionsLogged === 1 ? "" : "s"} logged`;
+  if (h.milestonesTotal === 0) return sessions;
+  const milestones = `${h.milestonesAchieved} Milestone${h.milestonesAchieved === 1 ? "" : "s"} Reached`;
+  return `${milestones} · ${sessions}`;
+}
 
 export default function TrackerScreen() {
   const router = useRouter();
@@ -32,9 +40,13 @@ export default function TrackerScreen() {
     const userId = session.user.id;
 
     try {
-      const [activeHobbies, finishedHobbies] = await Promise.all([
+      const [active, finished] = await Promise.all([
         listActiveHobbies(userId),
         listFinishedHobbies(userId),
+      ]);
+      const [activeHobbies, finishedHobbies] = await Promise.all([
+        withProgressSummary(active),
+        withProgressSummary(finished),
       ]);
       setState({ kind: "loaded", activeHobbies, finishedHobbies });
     } catch (e) {
@@ -58,26 +70,30 @@ export default function TrackerScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingBottom: BottomTabInset + Spacing.four },
-          ]}>
+          ]}
+          showsVerticalScrollIndicator={false}>
           <ThemedView style={styles.headerRow}>
-            <ThemedText type="title">My Hobbies</ThemedText>
+            <ThemedText type="title" style={styles.title}>
+              My Hobbies
+            </ThemedText>
             <Pressable
               onPress={() => router.push("/generate")}
               hitSlop={8}
               accessibilityLabel="Generate a new hobby">
-              <SymbolView
-                name={{ ios: "plus", android: "add", web: "add" }}
-                size={24}
-                tintColor={theme.text}
-              />
+              <ThemedView type="backgroundElement" style={styles.addButton}>
+                <SymbolView
+                  name={{ ios: "plus", android: "add", web: "add" }}
+                  size={18}
+                  tintColor={theme.text}
+                />
+              </ThemedView>
             </Pressable>
           </ThemedView>
-          <ThemedText themeColor="textSecondary" style={styles.subheading}>
-            Hobbies you're working on, and ones you've finished but could pick back up.
-          </ThemedText>
 
           {state.kind === "loading" && (
-            <ThemedText themeColor="textSecondary">Loading...</ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.sectionTitle}>
+              Loading...
+            </ThemedText>
           )}
 
           {state.kind === "error" && (
@@ -96,34 +112,24 @@ export default function TrackerScreen() {
                 </ThemedText>
               ) : (
                 <ThemedView style={styles.list}>
-                  {state.activeHobbies.map(({ userHobby, hobby }) => (
-                    <ThemedView key={userHobby.id} type="backgroundElement" style={styles.imageCard}>
-                      <Pressable
-                        onPress={() =>
-                          router.push({
-                            pathname: "/tracker/[userHobbyId]",
-                            params: { userHobbyId: userHobby.id },
-                          })
-                        }>
-                        <HobbyCardImage hobby={hobby} />
-                      </Pressable>
-                      <ThemedView style={styles.imageCardBody}>
-                        <ThemedText themeColor="textSecondary" type="small">
-                          Started{" "}
-                          {userHobby.started_at
-                            ? new Date(userHobby.started_at).toLocaleDateString()
-                            : "recently"}
-                        </ThemedText>
-                        <Pressable
-                          onPress={() =>
-                            router.push({ pathname: "/hobby/[id]", params: { id: hobby.id } })
-                          }>
-                          <ThemedText type="linkPrimary" style={styles.starterGuideLink}>
-                            View Starter Guide
+                  {state.activeHobbies.map((activeHobby) => (
+                    <Pressable
+                      key={activeHobby.userHobby.id}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/tracker/[userHobbyId]",
+                          params: { userHobbyId: activeHobby.userHobby.id },
+                        })
+                      }>
+                      <ThemedView type="backgroundElement" style={styles.imageCard}>
+                        <HobbyCardImage hobby={activeHobby.hobby} height={88} />
+                        <ThemedView style={styles.imageCardBody}>
+                          <ThemedText themeColor="textSecondary" type="small">
+                            {progressCaption(activeHobby)}
                           </ThemedText>
-                        </Pressable>
+                        </ThemedView>
                       </ThemedView>
-                    </ThemedView>
+                    </Pressable>
                   ))}
                 </ThemedView>
               )}
@@ -137,32 +143,33 @@ export default function TrackerScreen() {
               </ThemedText>
               <ThemedView style={styles.list}>
                 {state.finishedHobbies.map(({ userHobby, hobby }) => (
-                  <ThemedView key={userHobby.id} type="backgroundElement" style={styles.imageCard}>
-                    <Pressable
-                      onPress={() =>
-                        router.push({
-                          pathname: "/tracker/[userHobbyId]",
-                          params: { userHobbyId: userHobby.id },
-                        })
-                      }>
-                      <HobbyCardImage hobby={hobby} height={100} />
-                    </Pressable>
-                    <ThemedView style={styles.imageCardBody}>
-                      <ThemedText themeColor="textSecondary" type="small">
-                        Finished {new Date(userHobby.updated_at).toLocaleDateString()}
-                        {userHobby.feedback_enjoyed === true ? " · enjoyed it" : ""}
-                        {userHobby.feedback_enjoyed === false ? " · not for them" : ""}
-                      </ThemedText>
-                      <Pressable
-                        onPress={() =>
-                          router.push({ pathname: "/hobby/[id]", params: { id: hobby.id } })
-                        }>
-                        <ThemedText type="linkPrimary" style={styles.starterGuideLink}>
-                          View Starter Guide
+                  <Pressable
+                    key={userHobby.id}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/tracker/[userHobbyId]",
+                        params: { userHobbyId: userHobby.id },
+                      })
+                    }>
+                    <ThemedView type="backgroundElement" style={styles.finishedRow}>
+                      {hobby.image_url ? (
+                        <Image source={{ uri: hobby.image_url }} style={styles.finishedThumb} />
+                      ) : (
+                        <ThemedView type="backgroundSelected" style={styles.finishedThumb} />
+                      )}
+                      <ThemedView style={styles.finishedText}>
+                        <ThemedText type="smallBold">{hobby.name}</ThemedText>
+                        <ThemedText themeColor="textSecondary" type="small">
+                          Date Finished: {new Date(userHobby.updated_at).toLocaleDateString()}
                         </ThemedText>
-                      </Pressable>
+                      </ThemedView>
+                      <SymbolView
+                        name={{ ios: "chevron.right", android: "chevron_right", web: "chevron_right" }}
+                        size={14}
+                        tintColor={theme.textSecondary}
+                      />
                     </ThemedView>
-                  </ThemedView>
+                  </Pressable>
                 ))}
               </ThemedView>
             </ThemedView>
@@ -185,10 +192,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  subheading: {
-    marginTop: Spacing.half,
     marginBottom: Spacing.three,
+  },
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
+  },
+  addButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   error: {
     color: "#e0463f",
@@ -197,20 +212,37 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   imageCard: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
   },
   imageCardBody: {
     padding: Spacing.three,
-    gap: Spacing.half,
+    paddingTop: Spacing.two,
+    backgroundColor: "transparent",
   },
   section: {
     marginTop: Spacing.four,
   },
   sectionTitle: {
-    marginBottom: Spacing.one,
+    fontSize: 18,
+    lineHeight: 22,
+    marginBottom: Spacing.two,
   },
-  starterGuideLink: {
-    marginTop: Spacing.one,
+  finishedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+    padding: Spacing.two + 4,
+    borderRadius: 12,
+  },
+  finishedThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+  },
+  finishedText: {
+    flex: 1,
+    gap: 2,
+    backgroundColor: "transparent",
   },
 });

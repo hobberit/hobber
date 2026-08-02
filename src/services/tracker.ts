@@ -59,6 +59,56 @@ export async function listFinishedHobbies(userId: string): Promise<ActiveHobby[]
   return listHobbiesByStatus(userId, "completed", "updated_at");
 }
 
+export interface ActiveHobbyProgress extends ActiveHobby {
+  sessionsLogged: number;
+  milestonesAchieved: number;
+  milestonesTotal: number;
+}
+
+/** Adds session counts and milestone progress to a list of hobbies, e.g. for the
+ * "Milestone 2 of 4 · 8 sessions logged" caption on My Hobbies cards. Fetches in
+ * three bulk queries (not one per hobby) to stay flat regardless of list size. */
+export async function withProgressSummary(hobbies: ActiveHobby[]): Promise<ActiveHobbyProgress[]> {
+  if (hobbies.length === 0) return [];
+
+  const userHobbyIds = hobbies.map((h) => h.userHobby.id);
+  const hobbyIds = [...new Set(hobbies.map((h) => h.hobby.id))];
+
+  const [logsResult, milestonesResult, userMilestonesResult] = await Promise.all([
+    supabase.from("progress_logs").select("user_hobby_id").in("user_hobby_id", userHobbyIds),
+    supabase.from("milestones").select("hobby_id").in("hobby_id", hobbyIds),
+    supabase
+      .from("user_milestones")
+      .select("user_hobby_id")
+      .in("user_hobby_id", userHobbyIds)
+      .not("achieved_at", "is", null),
+  ]);
+
+  if (logsResult.error) throw logsResult.error;
+  if (milestonesResult.error) throw milestonesResult.error;
+  if (userMilestonesResult.error) throw userMilestonesResult.error;
+
+  const sessionsByHobby = countBy(logsResult.data, (r) => r.user_hobby_id);
+  const milestonesByHobby = countBy(milestonesResult.data, (r) => r.hobby_id);
+  const achievedByHobby = countBy(userMilestonesResult.data, (r) => r.user_hobby_id);
+
+  return hobbies.map((h) => ({
+    ...h,
+    sessionsLogged: sessionsByHobby.get(h.userHobby.id) ?? 0,
+    milestonesAchieved: achievedByHobby.get(h.userHobby.id) ?? 0,
+    milestonesTotal: milestonesByHobby.get(h.hobby.id) ?? 0,
+  }));
+}
+
+function countBy<T>(rows: T[], key: (row: T) => string): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const k = key(row);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return counts;
+}
+
 export interface TrackerDetail {
   userHobby: UserHobby;
   hobby: Hobby;

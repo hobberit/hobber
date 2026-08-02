@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 
 import { HobbyCardImage } from "@/components/hobby-card-image";
-import { BottomTabInset } from "@/constants/theme";
+import { BottomTabInset, Fonts } from "@/constants/theme";
 import {
   acceptHobby,
   generateHobbySuggestion,
@@ -304,6 +304,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   title: {
+    fontFamily: Fonts.sans,
     fontSize: 32,
     fontWeight: "700",
     color: "#000000",

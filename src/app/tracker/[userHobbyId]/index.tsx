@@ -7,7 +7,7 @@ import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "rea
 import { ThemedText } from "@/components/themed-text";
 import { ThemedTextInput } from "@/components/themed-text-input";
 import { ThemedView } from "@/components/themed-view";
-import { Spacing } from "@/constants/theme";
+import { Fonts, Spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useTheme } from "@/hooks/use-theme";
 import {
@@ -302,9 +302,16 @@ export default function TrackerDetailScreen() {
           <ThemedText style={styles.finishButtonLabel}>Finish Hobby</ThemedText>
         </Pressable>
       )}
+
+      <Pressable
+        style={styles.starterGuideButton}
+        onPress={() => router.push({ pathname: "/hobby/[id]", params: { id: hobby.id } })}>
+        <ThemedText style={styles.starterGuideButtonLabel}>Starter Guide</ThemedText>
+      </Pressable>
+
       {actionError && <ThemedText style={styles.error}>{actionError}</ThemedText>}
 
-      <Section title="History">
+      <Section title="Journal">
         {logs.length === 0 ? (
           <ThemedText themeColor="textSecondary" type="small">
             No sessions logged yet.
@@ -407,13 +414,20 @@ export default function TrackerDetailScreen() {
               ) : (
                 <ThemedView key={log.id} type="backgroundElement" style={styles.card}>
                   <ThemedView style={styles.logHeaderRow}>
-                    <ThemedView style={styles.logHeaderText}>
+                    <Pressable
+                      style={styles.logHeaderText}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/tracker/[userHobbyId]/activity/[logId]",
+                          params: { userHobbyId, logId: log.id },
+                        })
+                      }>
                       {log.title && <ThemedText type="smallBold">{log.title}</ThemedText>}
                       <ThemedText themeColor="textSecondary" type="small">
                         {new Date(log.log_date).toLocaleDateString()} · {log.duration_minutes} min
                         {log.mood_rating ? ` · mood ${log.mood_rating}/5` : ""}
                       </ThemedText>
-                    </ThemedView>
+                    </Pressable>
                     <Pressable
                       onPress={() => startEditingLog(log)}
                       hitSlop={8}
@@ -580,6 +594,18 @@ const styles = StyleSheet.create({
     color: "#3c87f7",
     fontWeight: "600",
   },
+  starterGuideButton: {
+    borderWidth: 1.5,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    paddingVertical: Spacing.three,
+    alignItems: "center",
+    marginTop: Spacing.two,
+  },
+  starterGuideButtonLabel: {
+    color: "#000000",
+    fontWeight: "600",
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -595,6 +621,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalTitle: {
+    fontFamily: Fonts.sans,
     fontSize: 20,
     fontWeight: "700",
     lineHeight: 24,

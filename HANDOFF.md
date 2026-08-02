@@ -44,7 +44,7 @@ There's no Supabase CLI usage in this project's history — everything was deplo
 All 35 hobbies now have full starter-guide depth, with 6 milestones each (Week 2 / Month 1 / 3 / 6 / 9 / 12). The original 5 **flagship hobbies** have fixed IDs, useful for direct testing:
 - Photography: `10000000-0000-0000-0000-000000000001`
 - Rock Climbing: `20000000-0000-0000-0000-000000000001`
-- Learning to Code: `30000000-0000-0000-0000-000000000001`
+- Coding: `30000000-0000-0000-0000-000000000001`
 - Gardening: `40000000-0000-0000-0000-000000000001`
 - Cooking Classes: `50000000-0000-0000-0000-000000000001`
 

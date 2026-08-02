@@ -17,3 +17,14 @@ export function getWeekStart(date: Date): Date {
 export function getMonthStart(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
+
+/** "Today at 4:09 PM" / "Yesterday at 4:09 PM" / "Jul 29, 2026 at 4:09 PM" */
+export function formatRelativeTimestamp(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const dayDiff = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
+  if (dayDiff === 0) return `Today at ${time}`;
+  if (dayDiff === 1) return `Yesterday at ${time}`;
+  return `${date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} at ${time}`;
+}

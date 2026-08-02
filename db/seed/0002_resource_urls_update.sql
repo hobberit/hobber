@@ -77,7 +77,7 @@ update resources set
   duration_seconds = 563
 where hobby_id = '20000000-0000-0000-0000-000000000001' and category = 'progression_story';
 
--- ─── Learning to Code (30000000-0000-0000-0000-000000000001) ───────────
+-- ─── Coding (30000000-0000-0000-0000-000000000001) ───────────
 
 update resources set
   title = 'Learn Python in Only 30 Minutes (Beginner Tutorial)',

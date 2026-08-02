@@ -42,7 +42,7 @@ insert into milestones (hobby_id, title, description, typical_timeframe, order_i
 ('10000000-0000-0000-0000-000000000002', 'Consistent brush control', 'Can produce intentional, controlled brushstrokes and basic textures on demand.', 'Month 6', 3),
 ('10000000-0000-0000-0000-000000000002', 'A small body of work', 'Has 8-10 completed paintings and a sense of a preferred subject or style.', 'Month 12', 4);
 
--- ─── Playing Guitar ─── --
+-- ─── Guitar ─── --
 insert into equipment_items (hobby_id, name, is_essential, cost_min, cost_max, product_link, alt_note) values
 ('10000000-0000-0000-0000-000000000003', 'Beginner acoustic guitar', true, 120, 250, 'https://www.amazon.com/s?k=beginner+acoustic+guitar', null),
 ('10000000-0000-0000-0000-000000000003', 'Digital clip-on tuner', true, 8, 15, 'https://www.amazon.com/s?k=clip+on+guitar+tuner', null),

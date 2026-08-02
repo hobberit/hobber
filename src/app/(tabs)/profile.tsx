@@ -6,11 +6,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ActivityCalendar } from "@/components/activity-calendar";
 import { ActivityFeed } from "@/components/activity-feed";
-import {
-  DurationBarChart,
-  formatDuration,
-  type WeekBucket,
-} from "@/components/duration-bar-chart";
+import type { WeekBucket } from "@/components/duration-bar-chart";
+import { HobbyActivityChart } from "@/components/hobby-activity-chart";
 import { ProfileHeader } from "@/components/profile-header";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -27,7 +24,7 @@ import {
   type EnrichedProgressLog,
 } from "@/services";
 
-const WEEKS_SHOWN = 12;
+const WEEKS_SHOWN = 8;
 
 // Cycled by order of first appearance so each hobby gets a stable, distinct color.
 const HOBBY_COLOR_PALETTE = [
@@ -241,6 +238,7 @@ export default function ProfileScreen() {
               const hobbyColors = buildHobbyColors(state.logs);
               const hobbyNames = buildHobbyNames(state.logs);
               const activitySummaries = summarizeActivities(state.logs);
+              const activeHobbyIds = new Set(state.activeHobbies.map((h) => h.hobby.id));
               const weekStreak = computeWeekStreak(new Set(state.logs.map((l) => l.log_date)));
               return (
                 <ThemedView style={styles.sections}>
@@ -287,31 +285,18 @@ export default function ProfileScreen() {
                   </ThemedView>
 
                   <ThemedView type="backgroundElement" style={styles.card}>
-                    <ThemedText type="subtitle" style={styles.cardTitle}>
-                      Activities Tracked
-                    </ThemedText>
                     {activitySummaries.length === 0 ? (
                       <ThemedText themeColor="textSecondary" type="small">
                         No sessions logged yet.
                       </ThemedText>
                     ) : (
-                      <ThemedView style={styles.list}>
-                        {activitySummaries.map((summary) => (
-                          <ThemedView key={summary.hobbyId} style={styles.activityRow}>
-                            <ThemedView
-                              style={[
-                                styles.activitySwatch,
-                                { backgroundColor: hobbyColors[summary.hobbyId] },
-                              ]}
-                            />
-                            <ThemedText type="small" style={styles.activityText}>
-                              {summary.hobbyName} · {summary.sessionCount} session
-                              {summary.sessionCount === 1 ? "" : "s"} ·{" "}
-                              {formatDuration(summary.totalMinutes)}
-                            </ThemedText>
-                          </ThemedView>
-                        ))}
-                      </ThemedView>
+                      <HobbyActivityChart
+                        buckets={buildWeekBuckets(state.logs)}
+                        hobbyIds={activitySummaries
+                          .map((s) => s.hobbyId)
+                          .filter((hobbyId) => activeHobbyIds.has(hobbyId))}
+                        hobbyNames={hobbyNames}
+                      />
                     )}
                   </ThemedView>
 
@@ -320,17 +305,6 @@ export default function ProfileScreen() {
                       All Activities
                     </ThemedText>
                     <ActivityFeed logs={state.logs} />
-                  </ThemedView>
-
-                  <ThemedView type="backgroundElement" style={styles.card}>
-                    <ThemedText type="subtitle" style={styles.cardTitle}>
-                      Statistics
-                    </ThemedText>
-                    <DurationBarChart
-                      buckets={buildWeekBuckets(state.logs)}
-                      hobbyColors={hobbyColors}
-                      hobbyNames={hobbyNames}
-                    />
                   </ThemedView>
 
                   <ThemedView type="backgroundElement" style={styles.card}>
@@ -390,18 +364,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#3c87f71a",
     alignSelf: "flex-start",
-  },
-  activityRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.two,
-  },
-  activitySwatch: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-  },
-  activityText: {
-    flex: 1,
   },
 });

@@ -30,6 +30,7 @@ export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
+    body: 'system-ui',
     /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
     /** iOS `UIFontDescriptorSystemDesignRounded` */
@@ -39,12 +40,16 @@ export const Fonts = Platform.select({
   },
   default: {
     sans: 'normal',
+    body: 'normal',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
   },
   web: {
+    /** Display/heading font — Bricolage Grotesque. */
     sans: 'var(--font-display)',
+    /** Body/UI text font — Inter. */
+    body: 'var(--font-body)',
     serif: 'var(--font-serif)',
     rounded: 'var(--font-rounded)',
     mono: 'var(--font-mono)',
@@ -61,5 +66,5 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+export const BottomTabInset = Platform.select({ ios: 50, android: 80, web: 60 }) ?? 0;
 export const MaxContentWidth = 800;
