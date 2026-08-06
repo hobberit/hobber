@@ -5,13 +5,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { HobbyCardImage } from "@/components/hobby-card-image";
 import { RecentActivityList } from "@/components/recent-activity-card";
-import { StreakTracker } from "@/components/streak-tracker";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { getMonthStart, toLocalISODate } from "@/lib/date";
-import { computeWeekActivity, computeWeekStreak } from "@/lib/streak";
+import { computeWeekStreak } from "@/lib/streak";
 import {
   acceptMonthlyChallenge,
   createMonthlyChallenge,
@@ -32,11 +31,6 @@ type ScreenState =
   | { kind: "resolved"; status: "accepted" | "skipped"; hobbyName: string }
   | { kind: "error"; message: string };
 
-interface WeekActivityState {
-  activeDays: boolean[];
-  todayIndex: number;
-}
-
 function currentMonth(): string {
   return toLocalISODate(getMonthStart(new Date()));
 }
@@ -48,7 +42,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const { session, profile } = useAuth();
   const [state, setState] = useState<ScreenState>({ kind: "loading" });
-  const [weekActivity, setWeekActivity] = useState<WeekActivityState | null>(null);
   const [recentLogs, setRecentLogs] = useState<EnrichedProgressLog[]>([]);
   const [weekStreak, setWeekStreak] = useState(0);
   const [isActing, setIsActing] = useState(false);
@@ -61,7 +54,6 @@ export default function HomeScreen() {
     try {
       const logs = await listAllProgressLogsForUser(userId);
       const logDates = new Set(logs.map((l) => l.log_date));
-      setWeekActivity(computeWeekActivity(logDates));
       setWeekStreak(computeWeekStreak(logDates));
       setRecentLogs(logs);
     } catch {
@@ -167,19 +159,7 @@ export default function HomeScreen() {
             styles.scrollContent,
             { paddingBottom: BottomTabInset + Spacing.four },
           ]}>
-          {weekActivity && (
-            <ThemedView style={styles.streakSection}>
-              <StreakTracker
-                activeDays={weekActivity.activeDays}
-                todayIndex={weekActivity.todayIndex}
-              />
-            </ThemedView>
-          )}
-
-          <ThemedView type="backgroundElement" style={styles.card}>
-            <ThemedText type="subtitle" style={styles.cardTitle}>
-              Recent Activity
-            </ThemedText>
+          <ThemedView style={[styles.card, styles.fullBleedCard]}>
             <RecentActivityList
               logs={recentLogs}
               streak={weekStreak}
@@ -301,17 +281,15 @@ const styles = StyleSheet.create({
     marginTop: Spacing.half,
     marginBottom: Spacing.three,
   },
-  streakSection: {
-    alignItems: "center",
-    paddingVertical: Spacing.four,
-  },
   card: {
     padding: Spacing.three,
     borderRadius: 12,
     marginBottom: Spacing.four,
   },
-  cardTitle: {
-    marginBottom: Spacing.two,
+  fullBleedCard: {
+    marginHorizontal: -Spacing.four,
+    paddingHorizontal: Spacing.four,
+    borderRadius: 0,
   },
   error: {
     color: "#e0463f",

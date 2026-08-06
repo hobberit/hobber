@@ -24,9 +24,9 @@ type ScreenState =
 
 function progressCaption(h: ActiveHobbyProgress): string {
   const sessions = `${h.sessionsLogged} session${h.sessionsLogged === 1 ? "" : "s"} logged`;
-  if (h.milestonesTotal === 0) return sessions;
-  const milestones = `${h.milestonesAchieved} Milestone${h.milestonesAchieved === 1 ? "" : "s"} Reached`;
-  return `${milestones} · ${sessions}`;
+  if (!h.userHobby.started_at) return sessions;
+  const started = `Started ${new Date(h.userHobby.started_at).toLocaleDateString()}`;
+  return `${started} · ${sessions}`;
 }
 
 export default function TrackerScreen() {

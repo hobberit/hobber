@@ -20,7 +20,7 @@ interface RecentActivityListProps {
 }
 
 /** Recent Activity, styled as condensed versions of the Recorded Activity post —
- * the user's own avatar + name + relative time, title, a hobby/Duration/Mood/Streak
+ * the user's own avatar + name + relative time, title, a hobby/Duration/Streak
  * stat line, and an optional photo — each tappable through to the full detail screen. */
 export function RecentActivityList({ logs, streak, poster, limit }: RecentActivityListProps) {
   const sorted = [...logs].sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -85,10 +85,18 @@ function RecentActivityCard({
       <Text style={styles.title}>{log.title || "Logged activity"}</Text>
 
       <View style={styles.statRow}>
-        <Text style={styles.statText}>{log.hobbyName}</Text>
-        <Text style={styles.statText}>· {log.duration_minutes} min</Text>
-        {log.mood_rating != null && <Text style={styles.statText}>· mood {log.mood_rating}/5</Text>}
-        <Text style={styles.statText}>· 🔥 {streak}</Text>
+        <View style={styles.statColumn}>
+          <Text style={styles.statLabel}>Hobby</Text>
+          <Text style={styles.statValue}>{log.hobbyName}</Text>
+        </View>
+        <View style={styles.statColumn}>
+          <Text style={styles.statLabel}>Duration</Text>
+          <Text style={styles.statValue}>{log.duration_minutes}m</Text>
+        </View>
+        <View style={styles.statColumn}>
+          <Text style={styles.statLabel}>Current Streak</Text>
+          <Text style={styles.statValue}>🔥 {streak}</Text>
+        </View>
       </View>
 
       {log.photo_url && <Image source={{ uri: log.photo_url }} style={styles.photo} />}
@@ -115,7 +123,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   cardDivider: {
-    borderBottomWidth: 1,
+    borderBottomWidth: 4,
     borderBottomColor: "#00000014",
   },
   header: {
@@ -156,19 +164,30 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: Fonts.sans,
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "700",
     color: "#000000",
   },
   statRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    gap: 20,
+    marginTop: 2,
   },
-  statText: {
-    fontSize: 12.5,
-    fontWeight: "600",
+  statColumn: {
+    gap: 2,
+  },
+  statLabel: {
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    fontWeight: "500",
     color: "#666666",
+  },
+  statValue: {
+    fontFamily: Fonts.sans,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#000000",
   },
   photo: {
     height: 140,

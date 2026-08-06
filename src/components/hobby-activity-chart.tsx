@@ -31,6 +31,8 @@ interface HobbyActivityChartProps {
  * re-filters the chart to that hobby's minutes per week instead of the combined total. */
 export function HobbyActivityChart({ buckets, hobbyIds, hobbyNames }: HobbyActivityChartProps) {
   const [selectedHobbyId, setSelectedHobbyId] = useState<string | null>(null);
+  // null means "no explicit tap yet" — defaults to the current (most recent) week.
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
 
   const values = buckets.map((b) => bucketMinutes(b, selectedHobbyId));
   // Scale is always set from the Total column, not the filtered selection, so every
@@ -38,14 +40,20 @@ export function HobbyActivityChart({ buckets, hobbyIds, hobbyNames }: HobbyActiv
   // of being re-stretched to fill the chart like it was just as active as everything else.
   const totalValues = buckets.map((b) => bucketMinutes(b, null));
   const max = Math.max(1, ...totalValues);
-  const thisWeekMinutes = values.length > 0 ? values[values.length - 1] : 0;
+
+  const activeIndex =
+    selectedWeekIndex !== null && selectedWeekIndex < buckets.length
+      ? selectedWeekIndex
+      : buckets.length - 1;
+  const activeMinutes = values[activeIndex] ?? 0;
+  const isCurrentWeek = activeIndex === buckets.length - 1;
 
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title" style={styles.totalLabel}>
-        {formatDuration(thisWeekMinutes)}{" "}
+        {formatDuration(activeMinutes)}{" "}
         <ThemedText themeColor="textSecondary" type="small">
-          this week
+          {isCurrentWeek ? "this week" : `week of ${formatWeekLabel(buckets[activeIndex].weekStart)}`}
         </ThemedText>
       </ThemedText>
 
@@ -80,17 +88,22 @@ export function HobbyActivityChart({ buckets, hobbyIds, hobbyNames }: HobbyActiv
       <View style={styles.chartRow}>
         {buckets.map((bucket, i) => {
           const value = values[i];
-          const isLast = i === buckets.length - 1;
+          const isActive = i === activeIndex;
           // Count "every other" backward from the most recent week, so the current
           // week's label is never one of an accidental adjacent pair — it's always
           // the anchor the pattern counts from, not just a forced exception to it.
           const showLabel = (buckets.length - 1 - i) % 2 === 0;
           const barHeight = Math.max(MIN_BAR_HEIGHT, (value / max) * CHART_HEIGHT);
           return (
-            <View key={bucket.weekStart} style={styles.barColumn}>
+            <Pressable
+              key={bucket.weekStart}
+              style={styles.barColumn}
+              onPress={() => setSelectedWeekIndex(i)}
+              hitSlop={4}
+              accessibilityLabel={`Show time spent the week of ${formatWeekLabel(bucket.weekStart)}`}>
               <View style={styles.barTrack}>
                 <View
-                  style={[styles.bar, { height: barHeight }, isLast && styles.barCurrent]}
+                  style={[styles.bar, { height: barHeight }, isActive && styles.barCurrent]}
                 />
               </View>
               <ThemedText
@@ -100,11 +113,11 @@ export function HobbyActivityChart({ buckets, hobbyIds, hobbyNames }: HobbyActiv
                 style={[
                   styles.barLabel,
                   !showLabel && styles.hiddenLabel,
-                  isLast && styles.barLabelCurrent,
+                  isActive && styles.barLabelCurrent,
                 ]}>
                 {formatWeekLabel(bucket.weekStart)}
               </ThemedText>
-            </View>
+            </Pressable>
           );
         })}
       </View>

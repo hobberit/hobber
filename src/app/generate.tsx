@@ -164,7 +164,7 @@ export default function GenerateScreen() {
         ]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backButton}>
             <SymbolView
               name={{ ios: "chevron.left", android: "chevron_left", web: "chevron_left" }}
               size={20}
@@ -298,10 +298,13 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   header: {
-    gap: 8,
+    gap: 4,
     paddingHorizontal: 24,
-    paddingTop: 4,
+    paddingTop: 0,
     paddingBottom: 24,
+  },
+  backButton: {
+    marginTop: 8,
   },
   title: {
     fontFamily: Fonts.sans,
@@ -310,7 +313,6 @@ const styles = StyleSheet.create({
     color: "#000000",
     letterSpacing: -0.32,
     lineHeight: 40,
-    marginTop: 8,
   },
   subtitle: {
     fontSize: 15,

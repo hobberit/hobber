@@ -14,23 +14,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { DatePickerField } from "@/components/date-picker-field";
 import { BottomTabInset, Fonts } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { toLocalISODate } from "@/lib/date";
 import { addProgressLog, listActiveHobbies, uploadActivityPhoto, type ActiveHobby } from "@/services";
-
-const MOOD_OPTIONS = [1, 2, 3, 4, 5];
-
-/** Accepts only well-formed, real calendar dates in YYYY-MM-DD (no timezone round-trip). */
-function isValidDateString(value: string): boolean {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
-}
 
 export default function LogActivityScreen() {
   const { userHobbyId, hobbyName } = useLocalSearchParams<{
@@ -43,7 +31,6 @@ export default function LogActivityScreen() {
   const [logDate, setLogDate] = useState(() => toLocalISODate(new Date()));
   const [duration, setDuration] = useState("");
   const [notes, setNotes] = useState("");
-  const [mood, setMood] = useState<number | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoMimeType, setPhotoMimeType] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,10 +84,6 @@ export default function LogActivityScreen() {
       setFormError("Give this session a title.");
       return;
     }
-    if (!isValidDateString(logDate)) {
-      setFormError("Enter a valid date (YYYY-MM-DD).");
-      return;
-    }
     const minutes = Number(duration);
     if (!minutes || minutes <= 0) {
       setFormError("Enter how many minutes you spent.");
@@ -122,7 +105,6 @@ export default function LogActivityScreen() {
         log_date: logDate,
         duration_minutes: minutes,
         notes: notes || undefined,
-        mood_rating: mood ?? undefined,
         photo_url: photoUrl,
       });
       router.back();
@@ -138,7 +120,8 @@ export default function LogActivityScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: BottomTabInset + 24 }]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
             <SymbolView
@@ -169,20 +152,7 @@ export default function LogActivityScreen() {
         />
 
         <View style={[styles.row, styles.spacedField]}>
-          <View style={[styles.input, styles.rowField]}>
-            <SymbolView
-              name={{ ios: "calendar", android: "calendar_month", web: "calendar_month" }}
-              size={16}
-              tintColor="#8A8D93"
-            />
-            <TextInput
-              placeholder="Date"
-              placeholderTextColor="#A6A9AE"
-              value={logDate}
-              onChangeText={setLogDate}
-              style={styles.rowFieldInput}
-            />
-          </View>
+          <DatePickerField value={logDate} onChange={setLogDate} />
           <View style={[styles.input, styles.rowField]}>
             <SymbolView
               name={{ ios: "clock", android: "schedule", web: "schedule" }}
@@ -223,27 +193,13 @@ export default function LogActivityScreen() {
         )}
 
         <TextInput
-          placeholder="Notes (optional)"
+          placeholder="Description (optional)"
           placeholderTextColor="#A6A9AE"
           value={notes}
           onChangeText={setNotes}
           multiline
           style={[styles.input, styles.notesInput, styles.spacedField]}
         />
-
-        <Text style={[styles.fieldLabel, styles.spacedField]}>MOOD</Text>
-        <View style={[styles.row, styles.moodRow]}>
-          {MOOD_OPTIONS.map((m) => (
-            <Pressable
-              key={m}
-              onPress={() => setMood(mood === m ? null : m)}
-              style={[styles.moodPill, mood === m && styles.moodPillSelected]}>
-              <Text style={[styles.moodPillLabel, mood === m && styles.moodPillLabelSelected]}>
-                {m}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
 
         {formError && <Text style={styles.error}>{formError}</Text>}
 
@@ -389,28 +345,6 @@ const styles = StyleSheet.create({
   notesInput: {
     height: 76,
     textAlignVertical: "top",
-  },
-  moodRow: {
-    marginTop: 8,
-  },
-  moodPill: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F0F0F3",
-  },
-  moodPillSelected: {
-    backgroundColor: "#E0E1E6",
-  },
-  moodPillLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#000000",
-  },
-  moodPillLabelSelected: {
-    fontWeight: "700",
   },
   error: {
     marginTop: 16,

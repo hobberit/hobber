@@ -1,19 +1,21 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
+import { Platform, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ActivityCalendar } from "@/components/activity-calendar";
-import { ActivityFeed } from "@/components/activity-feed";
 import type { WeekBucket } from "@/components/duration-bar-chart";
 import { HobbyActivityChart } from "@/components/hobby-activity-chart";
 import { ProfileHeader } from "@/components/profile-header";
+import { RecentActivityList } from "@/components/recent-activity-card";
+import { RecentPhotos } from "@/components/recent-photos";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { getWeekStart, toLocalISODate } from "@/lib/date";
+import { getErrorMessage } from "@/lib/errors";
 import { computeWeekStreak } from "@/lib/streak";
 import {
   listActiveHobbies,
@@ -50,9 +52,12 @@ function buildHobbyColors(logs: EnrichedProgressLog[]): Record<string, string> {
   return colors;
 }
 
-function buildHobbyNames(logs: EnrichedProgressLog[]): Record<string, string> {
+/** Includes every active hobby by name, not just ones with logged activity yet —
+ * so a newly added hobby shows up as its own filter pill on the activity chart
+ * immediately, before the user has logged a single session. */
+function buildHobbyNames(activeHobbies: ActiveHobby[]): Record<string, string> {
   const names: Record<string, string> = {};
-  for (const log of logs) names[log.hobbyId] = log.hobbyName;
+  for (const { hobby } of activeHobbies) names[hobby.id] = hobby.name;
   return names;
 }
 
@@ -95,43 +100,21 @@ function buildLogsByDate(logs: EnrichedProgressLog[]): Map<string, EnrichedProgr
   return map;
 }
 
-interface ActivitySummary {
-  hobbyId: string;
-  hobbyName: string;
-  sessionCount: number;
-  totalMinutes: number;
-}
-
-function summarizeActivities(logs: EnrichedProgressLog[]): ActivitySummary[] {
-  const byHobby = new Map<string, ActivitySummary>();
-  for (const log of logs) {
-    const existing = byHobby.get(log.hobbyId);
-    if (existing) {
-      existing.sessionCount += 1;
-      existing.totalMinutes += log.duration_minutes;
-    } else {
-      byHobby.set(log.hobbyId, {
-        hobbyId: log.hobbyId,
-        hobbyName: log.hobbyName,
-        sessionCount: 1,
-        totalMinutes: log.duration_minutes,
-      });
-    }
-  }
-  return [...byHobby.values()].sort((a, b) => b.totalMinutes - a.totalMinutes);
-}
-
 type ScreenState =
+  | {
+      kind: "loaded";
+      logs: EnrichedProgressLog[];
+      activeHobbies: ActiveHobby[];
+    }
   | { kind: "loading" }
-  | { kind: "loaded"; logs: EnrichedProgressLog[]; activeHobbies: ActiveHobby[] }
   | { kind: "error"; message: string };
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const { session, profile, refreshProfile } = useAuth();
   const [state, setState] = useState<ScreenState>({ kind: "loading" });
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [bioError, setBioError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -201,6 +184,26 @@ export default function ProfileScreen() {
     await refreshProfile();
   }
 
+  async function handleSaveBio(bio: string) {
+    if (!session?.user) return;
+    setBioError(null);
+    try {
+      await updateUserProfile(session.user.id, { bio: bio || null });
+      await refreshProfile();
+    } catch (e) {
+      setBioError(getErrorMessage(e));
+      throw e;
+    }
+  }
+
+  const headerStats =
+    state.kind === "loaded"
+      ? {
+          activities: state.logs.length,
+          weekStreak: computeWeekStreak(new Set(state.logs.map((l) => l.log_date))),
+        }
+      : { activities: 0, weekStreak: 0 };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
@@ -208,8 +211,15 @@ export default function ProfileScreen() {
           contentContainerStyle={[
             styles.scrollContent,
             { paddingBottom: BottomTabInset + Spacing.four },
-          ]}>
-          <ThemedText type="title">Profile</ThemedText>
+          ]}
+          keyboardShouldPersistTaps="handled">
+          <ThemedText type="title" style={styles.title}>Profile</ThemedText>
+
+          {state.kind === "loaded" && state.logs.some((log) => log.photo_url) && (
+            <ThemedView style={styles.recentPhotos}>
+              <RecentPhotos logs={state.logs} />
+            </ThemedView>
+          )}
 
           {profile && session?.user && (
             <ThemedView style={styles.headerSection}>
@@ -217,11 +227,15 @@ export default function ProfileScreen() {
                 displayName={profile.display_name}
                 email={session.user.email ?? ""}
                 avatarUrl={profile.avatar_url}
+                bio={profile.bio}
+                stats={headerStats}
                 isUploadingAvatar={isUploadingAvatar}
                 onPickAvatar={handlePickAvatar}
                 onSaveDisplayName={handleSaveDisplayName}
+                onSaveBio={handleSaveBio}
               />
               {avatarError && <ThemedText style={styles.error}>{avatarError}</ThemedText>}
+              {bioError && <ThemedText style={styles.error}>{bioError}</ThemedText>}
             </ThemedView>
           )}
 
@@ -236,84 +250,48 @@ export default function ProfileScreen() {
           {state.kind === "loaded" &&
             (() => {
               const hobbyColors = buildHobbyColors(state.logs);
-              const hobbyNames = buildHobbyNames(state.logs);
-              const activitySummaries = summarizeActivities(state.logs);
-              const activeHobbyIds = new Set(state.activeHobbies.map((h) => h.hobby.id));
-              const weekStreak = computeWeekStreak(new Set(state.logs.map((l) => l.log_date)));
+              const hobbyNames = buildHobbyNames(state.activeHobbies);
               return (
                 <ThemedView style={styles.sections}>
-                  <ThemedView type="backgroundElement" style={styles.card}>
-                    <ThemedText type="subtitle" style={styles.cardTitle}>
-                      Streak
-                    </ThemedText>
-                    <ThemedText type="title">
-                      {weekStreak} {weekStreak === 1 ? "week" : "weeks"}
-                    </ThemedText>
-                    <ThemedText themeColor="textSecondary" type="small">
-                      {weekStreak > 0
-                        ? "Log at least one activity a week to keep it going."
-                        : "Log an activity this week to start a new streak."}
-                    </ThemedText>
-                  </ThemedView>
+                  <ThemedView style={styles.divider} />
 
-                  <ThemedView type="backgroundElement" style={styles.card}>
-                    <ThemedText type="subtitle" style={styles.cardTitle}>
-                      Current Hobbies
-                    </ThemedText>
+                  <ThemedView style={[styles.card, styles.fullBleedCard]}>
                     {state.activeHobbies.length === 0 ? (
                       <ThemedText themeColor="textSecondary" type="small">
-                        Nothing active yet — tap the + on My Hobbies to generate a suggestion.
-                      </ThemedText>
-                    ) : (
-                      <ThemedView style={styles.list}>
-                        {state.activeHobbies.map(({ userHobby, hobby }) => (
-                          <Pressable
-                            key={userHobby.id}
-                            onPress={() =>
-                              router.push({
-                                pathname: "/tracker/[userHobbyId]",
-                                params: { userHobbyId: userHobby.id },
-                              })
-                            }>
-                            <ThemedView style={styles.hobbyChip}>
-                              <ThemedText type="small">{hobby.name}</ThemedText>
-                            </ThemedView>
-                          </Pressable>
-                        ))}
-                      </ThemedView>
-                    )}
-                  </ThemedView>
-
-                  <ThemedView type="backgroundElement" style={styles.card}>
-                    {activitySummaries.length === 0 ? (
-                      <ThemedText themeColor="textSecondary" type="small">
-                        No sessions logged yet.
+                        No active hobbies yet.
                       </ThemedText>
                     ) : (
                       <HobbyActivityChart
                         buckets={buildWeekBuckets(state.logs)}
-                        hobbyIds={activitySummaries
-                          .map((s) => s.hobbyId)
-                          .filter((hobbyId) => activeHobbyIds.has(hobbyId))}
+                        hobbyIds={state.activeHobbies.map((h) => h.hobby.id)}
                         hobbyNames={hobbyNames}
                       />
                     )}
+
+                    <ThemedView style={[styles.divider, styles.dividerSpaced]} />
+
+                    <ThemedView style={styles.calendarSpacing}>
+                      <ActivityCalendar
+                        logsByDate={buildLogsByDate(state.logs)}
+                        hobbyColors={hobbyColors}
+                      />
+                    </ThemedView>
                   </ThemedView>
 
-                  <ThemedView type="backgroundElement" style={styles.card}>
-                    <ThemedText type="subtitle" style={styles.cardTitle}>
-                      All Activities
-                    </ThemedText>
-                    <ActivityFeed logs={state.logs} />
-                  </ThemedView>
+                  <ThemedView style={styles.divider} />
 
-                  <ThemedView type="backgroundElement" style={styles.card}>
+                  <ThemedView style={[styles.card, styles.fullBleedCard]}>
                     <ThemedText type="subtitle" style={styles.cardTitle}>
-                      Calendar
+                      Activities
                     </ThemedText>
-                    <ActivityCalendar
-                      logsByDate={buildLogsByDate(state.logs)}
-                      hobbyColors={hobbyColors}
+                    <RecentActivityList
+                      logs={state.logs}
+                      streak={headerStats.weekStreak}
+                      poster={{
+                        displayName: profile?.display_name ?? null,
+                        avatarUrl: profile?.avatar_url ?? null,
+                        email: session?.user.email ?? "",
+                      }}
                     />
                   </ThemedView>
                 </ThemedView>
@@ -333,6 +311,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: Platform.select({ web: Spacing.six, default: Spacing.four }),
   },
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
+  },
   subheading: {
     marginTop: Spacing.half,
     marginBottom: Spacing.three,
@@ -341,6 +323,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
     marginBottom: Spacing.four,
     gap: Spacing.two,
+  },
+  recentPhotos: {
+    marginTop: Spacing.three,
   },
   error: {
     color: "#e0463f",
@@ -352,17 +337,24 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: 12,
   },
+  fullBleedCard: {
+    marginHorizontal: -Spacing.four,
+    paddingHorizontal: Spacing.four,
+    borderRadius: 0,
+  },
   cardTitle: {
+    fontSize: 21,
+    lineHeight: 26,
     marginBottom: Spacing.two,
   },
-  list: {
-    gap: Spacing.two,
+  calendarSpacing: {
+    marginTop: Spacing.three,
   },
-  hobbyChip: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 999,
-    backgroundColor: "#3c87f71a",
-    alignSelf: "flex-start",
+  divider: {
+    height: 4,
+    backgroundColor: "#00000014",
+  },
+  dividerSpaced: {
+    marginTop: Spacing.three,
   },
 });
