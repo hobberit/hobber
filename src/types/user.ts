@@ -9,6 +9,7 @@ export type User = {
   email: string;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
   auth_provider: string;
   personality_profile: PersonalityProfile | null;
   budget_range: CostBudgetRange | null;

@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -37,6 +38,7 @@ interface ActivityCalendarProps {
 }
 
 export function ActivityCalendar({ logsByDate, hobbyColors }: ActivityCalendarProps) {
+  const router = useRouter();
   const [viewedMonth, setViewedMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -109,7 +111,7 @@ export function ActivityCalendar({ logsByDate, hobbyColors }: ActivityCalendarPr
       </View>
 
       {selectedDate && (
-        <ThemedView type="backgroundElement" style={styles.detailPanel}>
+        <ThemedView style={styles.detailPanel}>
           <ThemedText type="smallBold">
             {new Date(selectedDate).toLocaleDateString(undefined, {
               weekday: "long",
@@ -122,8 +124,16 @@ export function ActivityCalendar({ logsByDate, hobbyColors }: ActivityCalendarPr
               No activity logged on this day.
             </ThemedText>
           ) : (
-            selectedLogs.map((log) => (
-              <View key={log.id} style={styles.detailRow}>
+            selectedLogs.map((log, index) => (
+              <Pressable
+                key={log.id}
+                onPress={() =>
+                  router.push({
+                    pathname: "/tracker/[userHobbyId]/activity/[logId]",
+                    params: { userHobbyId: log.user_hobby_id, logId: log.id },
+                  })
+                }
+                style={[styles.detailRow, index < selectedLogs.length - 1 && styles.detailRowDivider]}>
                 <View
                   style={[
                     styles.detailSwatch,
@@ -133,15 +143,12 @@ export function ActivityCalendar({ logsByDate, hobbyColors }: ActivityCalendarPr
                 <ThemedView style={styles.detailText}>
                   <ThemedText type="small">
                     {log.hobbyName} · {log.duration_minutes} min
-                    {log.mood_rating ? ` · mood ${log.mood_rating}/5` : ""}
                   </ThemedText>
-                  {log.notes && (
-                    <ThemedText themeColor="textSecondary" type="small">
-                      {log.notes}
-                    </ThemedText>
-                  )}
+                  <ThemedText themeColor="textSecondary" type="small">
+                    {log.title || "Logged activity"}
+                  </ThemedText>
                 </ThemedView>
-              </View>
+              </Pressable>
             ))
           )}
         </ThemedView>
@@ -192,8 +199,9 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   detailPanel: {
-    borderRadius: 12,
-    padding: Spacing.three,
+    marginHorizontal: -Spacing.four,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
     gap: Spacing.two,
     marginTop: Spacing.one,
   },
@@ -201,6 +209,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: Spacing.two,
+    paddingBottom: Spacing.two,
+  },
+  detailRowDivider: {
+    borderBottomWidth: 4,
+    borderBottomColor: "#00000014",
   },
   detailSwatch: {
     width: 10,

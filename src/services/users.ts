@@ -14,7 +14,7 @@ export async function getUserProfile(userId: string): Promise<User | null> {
 
 export async function updateUserProfile(
   userId: string,
-  fields: Partial<Pick<User, "display_name" | "avatar_url">>
+  fields: Partial<Pick<User, "display_name" | "avatar_url" | "bio">>
 ): Promise<void> {
   const { error } = await supabase.from("users").update(fields).eq("id", userId);
   if (error) throw error;

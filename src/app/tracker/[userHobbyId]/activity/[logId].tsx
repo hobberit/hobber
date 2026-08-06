@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { DatePickerField } from "@/components/date-picker-field";
 import { Fonts } from "@/constants/theme";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { formatRelativeTimestamp } from "@/lib/date";
@@ -17,24 +18,11 @@ import {
 } from "@/services";
 import type { Hobby, ProgressLog } from "@/types";
 
-const MOOD_OPTIONS = [1, 2, 3, 4, 5];
-
 type ScreenState =
   | { kind: "loading" }
   | { kind: "loaded"; hobby: Hobby; log: ProgressLog; streak: number }
   | { kind: "not_found" }
   | { kind: "error"; message: string };
-
-/** Accepts only well-formed, real calendar dates in YYYY-MM-DD (no timezone round-trip). */
-function isValidDateString(value: string): boolean {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
-}
 
 export default function RecordedActivityScreen() {
   const { userHobbyId, logId } = useLocalSearchParams<{ userHobbyId: string; logId: string }>();
@@ -48,7 +36,6 @@ export default function RecordedActivityScreen() {
   const [editDate, setEditDate] = useState("");
   const [editDuration, setEditDuration] = useState("");
   const [editNotes, setEditNotes] = useState("");
-  const [editMood, setEditMood] = useState<number | null>(null);
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null);
   const [editPhotoUri, setEditPhotoUri] = useState<string | null>(null);
   const [editPhotoMimeType, setEditPhotoMimeType] = useState<string | null>(null);
@@ -80,7 +67,6 @@ export default function RecordedActivityScreen() {
     setEditDate(log.log_date);
     setEditDuration(String(log.duration_minutes));
     setEditNotes(log.notes ?? "");
-    setEditMood(log.mood_rating ?? null);
     setEditPhotoUrl(log.photo_url);
     setEditPhotoUri(null);
     setEditPhotoMimeType(null);
@@ -112,10 +98,6 @@ export default function RecordedActivityScreen() {
       setEditError("Give this session a title.");
       return;
     }
-    if (!isValidDateString(editDate)) {
-      setEditError("Enter a valid date (YYYY-MM-DD).");
-      return;
-    }
     const minutes = Number(editDuration);
     if (!minutes || minutes <= 0) {
       setEditError("Enter how many minutes you spent.");
@@ -137,7 +119,6 @@ export default function RecordedActivityScreen() {
         log_date: editDate,
         duration_minutes: minutes,
         notes: editNotes.trim() === "" ? null : editNotes,
-        mood_rating: editMood,
         photo_url: photoUrl,
       });
       setIsEditing(false);
@@ -151,7 +132,10 @@ export default function RecordedActivityScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
             <SymbolView
@@ -200,12 +184,6 @@ export default function RecordedActivityScreen() {
                 <Text style={styles.statLabel}>Duration</Text>
                 <Text style={styles.statValue}>{state.log.duration_minutes} min</Text>
               </View>
-              {state.log.mood_rating != null && (
-                <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Mood</Text>
-                  <Text style={styles.statValue}>{state.log.mood_rating} / 5</Text>
-                </View>
-              )}
               <View style={styles.stat}>
                 <Text style={styles.statLabel}>Streak</Text>
                 <View style={styles.streakValueRow}>
@@ -235,13 +213,7 @@ export default function RecordedActivityScreen() {
               style={styles.input}
             />
             <View style={styles.row}>
-              <TextInput
-                placeholder="Date (YYYY-MM-DD)"
-                placeholderTextColor="#A6A9AE"
-                value={editDate}
-                onChangeText={setEditDate}
-                style={[styles.input, styles.rowField]}
-              />
+              <DatePickerField value={editDate} onChange={setEditDate} />
               <TextInput
                 placeholder="Minutes"
                 placeholderTextColor="#A6A9AE"
@@ -252,27 +224,13 @@ export default function RecordedActivityScreen() {
               />
             </View>
             <TextInput
-              placeholder="Notes (optional)"
+              placeholder="Description (optional)"
               placeholderTextColor="#A6A9AE"
               value={editNotes}
               onChangeText={setEditNotes}
               multiline
               style={[styles.input, styles.notesInput]}
             />
-
-            <Text style={styles.fieldLabel}>MOOD</Text>
-            <View style={styles.moodRow}>
-              {MOOD_OPTIONS.map((m) => (
-                <Pressable
-                  key={m}
-                  onPress={() => setEditMood(editMood === m ? null : m)}
-                  style={[styles.moodPill, editMood === m && styles.moodPillSelected]}>
-                  <Text style={[styles.moodPillLabel, editMood === m && styles.moodPillLabelSelected]}>
-                    {m}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
 
             {editPhotoUri || editPhotoUrl ? (
               <View style={styles.photoPreviewRow}>
@@ -471,35 +429,6 @@ const styles = StyleSheet.create({
   notesInput: {
     height: 76,
     textAlignVertical: "top",
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.7,
-    color: "#8A8D93",
-  },
-  moodRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  moodPill: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F0F0F3",
-  },
-  moodPillSelected: {
-    backgroundColor: "#E0E1E6",
-  },
-  moodPillLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#000000",
-  },
-  moodPillLabelSelected: {
-    fontWeight: "700",
   },
   addPhotoRow: {
     flexDirection: "row",

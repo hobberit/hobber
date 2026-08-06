@@ -118,9 +118,6 @@ export default function HobbyGuideScreen() {
       {header}
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <ThemedText type="title" style={styles.title}>{hobby.name}</ThemedText>
-      <ThemedText themeColor="textSecondary" style={styles.category}>
-        {capitalize(hobby.category)}
-      </ThemedText>
       <ThemedText style={styles.description}>{hobby.description}</ThemedText>
 
       <Section title="Beginner Equipment">
@@ -190,14 +187,15 @@ export default function HobbyGuideScreen() {
                   const videoId = extractYouTubeVideoId(resource.url);
                   return (
                     <ThemedView key={resource.id} style={styles.resourceLink}>
-                      {videoId && (
+                      {videoId ? (
                         <ThemedView style={styles.embedWrapper}>
                           <YouTubeEmbed videoId={videoId} />
                         </ThemedView>
+                      ) : (
+                        <ExternalLink href={resource.url as `${string}:${string}`}>
+                          <ThemedText type="linkPrimary">{resource.title}</ThemedText>
+                        </ExternalLink>
                       )}
-                      <ExternalLink href={resource.url as `${string}:${string}`}>
-                        <ThemedText type="linkPrimary">{resource.title}</ThemedText>
-                      </ExternalLink>
                     </ThemedView>
                   );
                 })}
@@ -238,10 +236,6 @@ function EmptyNote({ text }: { text: string }) {
   );
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: Spacing.four,
@@ -265,13 +259,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     lineHeight: 36,
-  },
-  category: {
-    marginTop: Spacing.half,
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
   },
   description: {
     marginTop: Spacing.two,

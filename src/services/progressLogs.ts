@@ -17,7 +17,6 @@ export interface NewProgressLog {
   log_date: string;
   duration_minutes: number;
   notes?: string;
-  mood_rating?: number;
   photo_url?: string;
 }
 
@@ -40,7 +39,6 @@ export interface ProgressLogUpdate {
   log_date?: string;
   duration_minutes?: number;
   notes?: string | null;
-  mood_rating?: number | null;
   photo_url?: string | null;
 }
 

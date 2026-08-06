@@ -7,7 +7,6 @@ import { Spacing } from '@/constants/theme';
 
 const TAB_ICONS: Record<string, { ios: string; android: string; web: string }> = {
   home: { ios: 'house', android: 'home', web: 'home' },
-  explore: { ios: 'safari', android: 'explore', web: 'explore' },
   tracker: { ios: 'square.grid.2x2', android: 'grid_view', web: 'grid_view' },
   profile: { ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' },
 };
@@ -20,9 +19,6 @@ export default function AppTabs() {
         <View style={styles.tabBar}>
           <TabTrigger name="home" href="/" asChild>
             <TabButton icon={TAB_ICONS.home} label="Home" />
-          </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton icon={TAB_ICONS.explore} label="Explore" />
           </TabTrigger>
           <TabTrigger name="tracker" href="/tracker" asChild>
             <TabButton icon={TAB_ICONS.tracker} label="My Hobbies" />
